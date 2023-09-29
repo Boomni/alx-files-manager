@@ -1,4 +1,4 @@
-import promisify from 'util';
+import { promisify } from 'util';
 import redis from 'redis';
 
 class RedisClient {
@@ -8,9 +8,6 @@ class RedisClient {
     this.client.on('error', (error) => {
       console.error(error.message);
       this.connected = false;
-    });
-    this.client.on('connect', () => {
-      this.connected = true;
     });
   }
 
