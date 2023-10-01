@@ -1,4 +1,4 @@
-import redisClient from '../utils/redis';
+import redis from '../utils/redis';
 import dbClient from '../utils/db';
 
 class AppController {
@@ -10,7 +10,7 @@ class AppController {
    */
   static getStatus(request, response) {
     const status = {
-      redis: redisClient.isAlive(),
+      redis: redis.isAlive(),
       db: dbClient.isAlive(),
     };
     response.status(200).send(status);
