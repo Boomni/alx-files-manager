@@ -17,7 +17,7 @@ class UsersController {
 
     let queryResult = await users.findOne({ email });
     if (queryResult) {
-      return res.status(400).json({ error: 'Already exists' });
+      return res.status(400).json({ error: 'Already exist' });
     }
 
     const hashedPassword = sha1(password);
