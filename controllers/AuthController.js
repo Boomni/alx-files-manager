@@ -6,14 +6,8 @@ import redis from '../utils/redis';
 class AuthController {
   static async getConnect(request, response) {
     const authHeader = request.header('Authorization');
-    if (!authHeader) {
-      return;
-    }
-    if (typeof (authHeader) !== 'string') {
-      return;
-    }
-    if (authHeader.slice(0, 6) !== 'Basic ') {
-      return;
+    if (!authHeader || authHeader.slice(0, 6) !== 'Basic ') {
+      response.status(401).json({ error: 'Unauthorized' });
     }
     const authHeaderDetails = authHeader.slice(6);
     const decodedDetails = Buffer.from(authHeaderDetails, 'base64').toString('utf8');

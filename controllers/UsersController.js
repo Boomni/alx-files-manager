@@ -38,7 +38,7 @@ class UsersController {
     const userId = await redisClient.get(key);
     const userObjId = new ObjectId(userId);
     if (userId) {
-      const users = dbClient.db.collection('users');
+      const users = dbClient.client.db().collection('users');
       const existingUser = await users.findOne({ _id: userObjId });
       if (existingUser) {
         response.status(200).json({ id: userId, email: existingUser.email });
