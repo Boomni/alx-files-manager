@@ -29,6 +29,17 @@ class UsersController {
     queryResult = await users.insertOne(newUser);
     return res.status(201).send({ id: queryResult.insertedId, email });
   }
+  static async getMe(req, res) {
+    const token = req.headers['x-token'];
+    const userId = await redisClient.get(`auth_${token}`);
+    if (userId) {
+      const user = await dbClient.findOne('users', { _id: ObjectId(userId) });
+      if (user) {
+        return res.status(200).json({ id: user._id, email: user.email });
+      }
+    }
+    return res.status(401).json({ error: 'Unauthorized' });
+  };
 }
 
 module.exports = UsersController;
