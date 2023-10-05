@@ -13,7 +13,7 @@ class FilesController {
   static async postUpload(req, res) {
     // get files collection
     // const files = await dbClient.db.connection('files');
-    const db = dbClient.client.db(); // Access the db() method from the client
+    const db = dbClient.client.db();
     const files = db.collection('files');
 
     // retrieve user based on token
@@ -76,7 +76,6 @@ class FilesController {
 
   static async getShow(req, res) {
     const token = req.headers['x-token'];
-    const fileId = req.params.id;
 
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -84,9 +83,9 @@ class FilesController {
     const userId = await redisClient.get(key);
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const fileId = req.params.id;
 
-    const file = await dbClient.client
-      .db()
+    const file = await dbClient.client.db()
       .collection('files')
       .findOne({ _id: ObjectId(fileId), userId });
 
@@ -144,8 +143,7 @@ class FilesController {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const file = await dbClient.client
-      .db()
+    const file = await dbClient.client.db()
       .collection('files')
       .findOneAndUpdate(
         { _id: ObjectId(fileId), userId },
@@ -169,8 +167,7 @@ class FilesController {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const file = await dbClient.client
-      .db()
+    const file = await dbClient.client.db()
       .collection('files')
       .findOneAndUpdate(
         { _id: ObjectId(fileId), userId },

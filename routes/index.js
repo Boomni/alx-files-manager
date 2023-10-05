@@ -22,6 +22,6 @@ router.post('/files', FilesController.postUpload);
 
 // PUT requests
 router.put('/files/:id/publish', FilesController.putPublish);
-router.put('/files/:id/publish', FilesController.putUnpublish);
+router.put('/files/:id/unpublish', FilesController.putUnpublish);
 
 module.exports = router;
