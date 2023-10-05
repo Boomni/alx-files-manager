@@ -1,7 +1,9 @@
+import path from 'path';
+import mime from 'mime-types';
 import { redisClient } from '../utils/redis';
 import dbClient from '../utils/db';
 
-const { ObjectId } = require('mongodb');
+const { getMongoInstance, ObjectId } = require('mongodb');
 const uuid4 = require('uuid').v4;
 const fs = require('fs');
 
@@ -72,29 +74,25 @@ class FilesController {
       .send({ ...objFromQuery, id: queryResult.insertedId });
   }
 
-  static async getShow(request, response) {
-    // Retrieve the user based on the token
-    const token = request.headers['x-token'];
-    if (!token) return response.status(401).json({ error: 'Unauthorized' });
-    const keyID = await redisClient.get(`auth_${token}`);
-    if (!keyID) return response.status(401).json({ error: 'Unauthorized' });
-    const user = await dbClient.client.db().collection('users').findOne({ _id: ObjectId(keyID) });
-    if (!user) return response.status(401).json({ error: 'Unauthorized' });
+  static async getShow(req, res) {
+    const token = req.headers['x-token'];
+    const fileId = req.params.id;
 
-    const idFile = request.params.id || '';
-    const fileDocument = await dbClient.client.db()
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const file = await dbClient.client
+      .db()
       .collection('files')
-      .findOne({ _id: ObjectId(idFile), userId: user._id });
-    if (!fileDocument) return response.status(404).send({ error: 'Not found' });
+      .findOne({ _id: ObjectId(fileId), userId });
 
-    return response.send({
-      id: fileDocument._id,
-      userId: fileDocument.userId,
-      name: fileDocument.name,
-      type: fileDocument.type,
-      isPublic: fileDocument.isPublic,
-      parentId: fileDocument.parentId,
-    });
+    if (!file) return res.status(404).json({ error: 'Not found' });
+
+    return res.status(200).json(file);
   }
 
   static async getIndex(request, response) {
@@ -183,6 +181,45 @@ class FilesController {
     if (!file.value) return res.status(404).json({ error: 'Not found' });
 
     return res.status(200).json(file.value);
+  }
+
+  static async getFile(req, res) {
+    try {
+      const fileId = req.params.id;
+      const { userId } = req;
+      const filesCollection = getMongoInstance().db().collection('files');
+      const file = await filesCollection.findOne({ _id: ObjectId(fileId) });
+
+      if (!file) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+
+      if (!file.isPublic && (!userId || file.userId !== userId.toString())) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+
+      if (file.type === 'folder') {
+        res.status(400).json({ error: "A folder doesn't have content" });
+        return;
+      }
+
+      const filePath = path.join(__dirname, '..', 'uploads', file.id.toString());
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+
+      const mimeType = mime.lookup(file.name);
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.on('open', () => {
+        res.set('Content-Type', mimeType);
+        fileStream.pipe(res);
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 }
 
